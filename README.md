@@ -244,9 +244,12 @@ MIT.
 ---
 
 Part of the kit series by Palo Alto AI Research Lab. Closest neighbours:
-[`verified-ops-starter`](https://github.com/tonydzi/verified-ops-starter) (your scheduled job
-says exit 0 - prove it did the work; this kit is the same discipline applied to a rollout
-instead of a cron job), [`claude-consensus`](https://github.com/tonydzi/claude-consensus)
+[`verified-ops-starter`](https://github.com/tonydzi/verified-ops-starter) - same discipline,
+different half of the job: its `rollout` check *asks* whether a fix is present on each box
+(hub-side, read-only, no state), while this kit *runs* the rollout - gates, payload, canary
+order, per-node markers, refusals. Use that one to audit a fleet you deploy to some other way;
+use this one when you want the deploy itself to refuse to lie. Also
+[`claude-consensus`](https://github.com/tonydzi/claude-consensus)
 (how the machines agree on *what* to roll out before anyone rolls it), and
 [`agent-approval-gate`](https://github.com/tonydzi/agent-approval-gate) (when a parcel needs a
 human's `+` and nobody is at the terminal). Also
