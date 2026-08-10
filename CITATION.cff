@@ -1,0 +1,28 @@
+cff-version: 1.2.0
+message: "If you use fleet-deploy in research or software, please cite it as below."
+title: "fleet-deploy"
+type: software
+authors:
+  - family-names: Dziatkovskii
+    given-names: Anton
+    orcid: "https://orcid.org/0000-0001-7408-3054"
+    affiliation: "Palo Alto AI Research Lab"
+repository-code: "https://github.com/tonydzi/fleet-deploy"
+url: "https://github.com/tonydzi/fleet-deploy"
+license: MIT
+abstract: >-
+  Rolling a change to a small heterogeneous fleet and proving it landed on each machine,
+  for the case where a configuration management system is not an option: no agent to
+  install, no inventory server, machines asleep half the day. One stdlib-only Python file
+  enforcing one sentence: sent is not done and silence is not consent. A change counts as
+  applied only when a command ran on that node and read back a fact; everything else is
+  counted in a separate column out loud. Registration refuses parcels that cannot deliver
+  their artifact, canary waves require a node of a different class before the fleet, a node
+  may decline with a reason, and a node-down verdict expires after 30 days.
+keywords:
+  - deployment
+  - fleet-management
+  - canary-release
+  - verification
+  - devops
+  - ai-agents
