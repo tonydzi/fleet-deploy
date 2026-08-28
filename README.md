@@ -17,7 +17,7 @@ A change counts as rolled out on a machine only when a command ran *on that mach
 back a **fact** - a hash, a value, a marker. Everything else gets counted in a separate
 column, out loud.
 
-Built and running daily at [Palo Alto AI Research Lab](https://github.com/tonydzi/Palo-Alto-AI-Research-Lab),
+Built and running daily at [Palo Alto AI Research Lab](https://github.com/tonydzi/tonydzi),
 where a fleet of autonomous agents rolls its own fixes to itself.
 
 ```console
@@ -249,7 +249,7 @@ different half of the job: its `rollout` check *asks* whether a fix is present o
 (hub-side, read-only, no state), while this kit *runs* the rollout - gates, payload, canary
 order, per-node markers, refusals. Use that one to audit a fleet you deploy to some other way;
 use this one when you want the deploy itself to refuse to lie. Also
-[`claude-consensus`](https://github.com/tonydzi/claude-consensus)
+[`claude-consensus`](https://github.com/tonydzi/claw-consensus)
 (how the machines agree on *what* to roll out before anyone rolls it), and
 [`agent-approval-gate`](https://github.com/tonydzi/agent-approval-gate) (when a parcel needs a
 human's `+` and nobody is at the terminal). Also
