@@ -63,7 +63,7 @@ Our first version had a done-marker that looked **byte-for-byte identical** whet
 had verified the fact, a human had said "yes I did it", or someone had passed `--force` and
 skipped the check. Four code paths wrote that marker, each with its own wording.
 
-So when we said "rolled out to every machine", we could not defend the number. When we finally
+So when we said "rolled out to every machine", we could not defend the number — the split that fixed it is [docs/ROLLOUT-MODEL.md](docs/ROLLOUT-MODEL.md). When we finally
 split it, a large share of our historical "applied" turned out to be nothing of the kind.
 
 Now there are two words and they never get added together:
@@ -71,15 +71,13 @@ Now there are two words and they never get added together:
 | `applied` | a machine command read a fact on that node and exited 0 |
 | `claimed` | somebody says so: prose steps, a hand-confirmation, a no-op check |
 
-`claimed` is legal - work that needs human hands exists, and hiding it would be worse. It just
+`claimed` is legal - work that needs human hands exists, and hiding it would be worse, which [docs/ROLLOUT-MODEL.md](docs/ROLLOUT-MODEL.md) argues at length. It just
 does not get to inflate the number, and it never unblocks the next wave.
 
 ### 2. An apply that does not deliver the artifact cannot be registered
 
-This is the specific bug that produced **128 stuck parcels** in our fleet. A parcel said the
-file would arrive over the sync share. For one node, that share did not exist. The parcel was
-undeliverable by construction - green at registration, impossible at the far end - and it sat
-there, along with the next hundred like it, until a node refused to fake a verify.
+This is the specific bug that produced **128 stuck parcels** in our fleet, written up in [docs/GOTCHAS.md](docs/GOTCHAS.md). A parcel said the
+file would arrive over the sync share. For one node, that share did not exist. The parcel was undeliverable by construction - green at registration, impossible at the far end - and it sat there, along with the next hundred like it, until a node refused to fake a verify; [docs/GOTCHAS.md](docs/GOTCHAS.md) has the whole post-mortem.
 
 Registration now blocks:
 
@@ -93,13 +91,12 @@ Registration now blocks:
 * a node name the registry does not know. A typo used to create a queue file that no machine
   ever reads: invisible by construction, and nobody owns the gap.
 
-Every gate has a named escape hatch, and every escape prints a loud line. A bypass that leaves
+Every gate in [fleetdeploy.py](fleetdeploy.py) has a named escape hatch, and every escape prints a loud line. A bypass that leaves
 no trace brings back the whole class.
 
 ### 3. Canary first - "all machines at once" is itself the failure
 
-We spent months building watchdogs against common-mode failures while creating one by hand
-every time we pushed a change to five machines simultaneously. When it broke, it broke
+We spent months building watchdogs against common-mode failures while creating one by hand every time we pushed a change to five machines simultaneously; [docs/ROLLOUT-MODEL.md](docs/ROLLOUT-MODEL.md) is what we replaced that habit with. When it broke, it broke
 everywhere at once, and there was no healthy machine left to repair from.
 
 ```
@@ -108,7 +105,7 @@ wave 1   a node of a DIFFERENT class or OS      <- mandatory, not a nicety
 wave 2   everybody else
 ```
 
-A later wave cannot start until the earlier ones are `applied`. Three details we paid for:
+A later wave cannot start until the earlier ones are `applied`, and [fleetdeploy.py](fleetdeploy.py) is what refuses to start it. Three details we paid for:
 
 * the canary must match the consumers' class - a headless box is a bad canary for a bug that
   only bites in a desktop session, and the reverse;
@@ -117,8 +114,7 @@ A later wave cannot start until the earlier ones are `applied`. Three details we
 * if the change touches a lock, a lease, a shared counter or one database, a single run is
   blind to races - `--concurrent` puts two nodes in wave 0.
 
-And the rollback is named **before** the rollout, at registration, or it is not a rollback -
-it is an improvisation you will attempt on a broken fleet at 2am.
+And the rollback is named **before** the rollout, at registration, or it is not a rollback - it is an improvisation you will attempt on a broken fleet at 2am, as [docs/ROLLOUT-MODEL.md](docs/ROLLOUT-MODEL.md) puts it.
 
 ### 4. A node has the right to say "not mine"
 
@@ -128,8 +124,7 @@ python fleetdeploy.py not-for-me gpu-driver-bump --reason "no GPU on this box"
 
 Without that, unapplicable parcels pile up and the board is permanently red - and a
 permanently red board trains its readers to stop looking, which is worse than having no board.
-The reason is mandatory: an unexplained refusal is indistinguishable from a machine that
-quietly stopped applying things.
+The reason is mandatory in [fleetdeploy.py](fleetdeploy.py): an unexplained refusal is indistinguishable from a machine that quietly stopped applying things.
 
 ### 5. "That node is dead" expires
 
@@ -141,7 +136,7 @@ somebody finally did, it worked on the first attempt in ten seconds.
 python fleetdeploy.py node-down NODE-5 --reason "ssh refused" --recheck "ssh node-5 true"
 ```
 
-The recheck command is **required**, and the verdict expires in 30 days. After that the board
+The recheck command is **required** by [fleetdeploy.py](fleetdeploy.py), and the verdict expires in 30 days. After that the board
 stops honouring it and tells you to re-measure. A negative result is a measurement taken on
 one day, not a property of the world.
 
@@ -191,8 +186,7 @@ python fleetdeploy.py board --html board.html   # who is behind, by name
 python fleetdeploy.py audit                     # re-read the fact for things already applied
 ```
 
-`audit` is not optional in the long run. A marker short-circuits every check forever, so a
-parcel that was applied and then quietly reverted stays green until something asks again. We
+The `audit` subcommand of [fleetdeploy.py](fleetdeploy.py) is not optional in the long run. A marker short-circuits every check forever, so a parcel that was applied and then quietly reverted stays green until something asks again - the trap is named in [docs/GOTCHAS.md](docs/GOTCHAS.md). We
 found one live: the marker existed, the file it installed did not.
 
 **`$VAR` and `%VAR%` both work, everywhere.** The engine expands its own placeholders
@@ -292,9 +286,7 @@ the rest. All stdlib-only Python, all free.
 
 ## 🧩 One piece of a working system
 
-This repository is one piece lifted out of a live operation: one non-technical founder, an AI
-cofounder, and a fleet of machines that reach consensus with each other and wake the human only
-for money or the irreversible. It was extracted after it survived production, not written as a
+This repository is one piece lifted out of a live operation mapped in [SYSTEM.md](https://github.com/tonydzi/tonydzi/blob/main/SYSTEM.md): one non-technical founder, an AI cofounder, and a fleet of machines that reach consensus with each other and wake the human only for money or the irreversible. It was extracted after it survived production, not written as a
 demo — and it runs on its own: nothing here phones home to the rest.
 
 **See how the whole thing fits together → [SYSTEM.md](https://github.com/tonydzi/tonydzi/blob/main/SYSTEM.md)**
@@ -305,7 +297,6 @@ Its closest neighbours in the **fleet** layer: [`claw-consensus`](https://github
 
 ## AI contributors
 
-This project is built by a human + AI team, and the git log says so: Claude writes most of
-the code, Codex and Grok review it, Gemini feeds the research. Each is credited on a commit
+This project is built by a human + AI team, and the git log says so under the rules in [AI-CONTRIBUTORS.md](https://github.com/tonydzi/.github/blob/main/AI-CONTRIBUTORS.md): Claude writes most of the code, Codex and Grok review it, Gemini feeds the research. Each is credited on a commit
 **only if its output changed that commit's content** — no decorative credits. Lab-wide
 policy, one source for every repo: [AI-CONTRIBUTORS.md](https://github.com/tonydzi/.github/blob/main/AI-CONTRIBUTORS.md).
