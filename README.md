@@ -294,7 +294,7 @@ to the rest.
 
 **See how the whole thing fits together → [SYSTEM.md](https://github.com/tonydzi/tonydzi/blob/main/SYSTEM.md)**
 
-Its closest neighbours in the **fleet** layer: [`claude-consensus`](https://github.com/tonydzi/claude-consensus) · [`claude-mac-patrol`](https://github.com/tonydzi/claude-mac-patrol)
+Its closest neighbours in the **fleet** layer: [`claude-consensus`](https://github.com/tonydzi/claw-consensus) · [`claude-mac-patrol`](https://github.com/tonydzi/claude-mac-patrol)
 
 <!--ecosystem-map:end-->
 
