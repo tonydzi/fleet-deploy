@@ -398,6 +398,49 @@ class Case(unittest.TestCase):
         self.assertTrue(os.path.exists(os.path.join(self.homes["HUB-1"], "pct", "thing.txt")))
 
 
+class TestExpandVarsQuoting(unittest.TestCase):
+    """A real node path can contain a space. expand_vars feeds a shell, so a bare $VAR whose
+    value has a space must be quoted for that shell; a reference the manifest already quotes
+    must NOT be quoted twice; a value without special characters must stay byte-for-byte."""
+
+    def setUp(self):
+        sys.path.insert(0, os.path.dirname(HERE))
+        import fleetdeploy
+        self.fdm = fleetdeploy
+        self.tmp = tempfile.mkdtemp(prefix="fleet-q-")
+        self.pdir = os.path.join(self.tmp, "dir with space")
+        os.makedirs(self.pdir)
+        with open(os.path.join(self.pdir, "x.py"), "w", encoding="utf-8") as f:
+            f.write("import sys\nprint('ran-ok')\nsys.exit(0)\n")
+        self.env = dict(os.environ)
+        self.env.update({"PAYLOAD": self.pdir, "PYTHON": sys.executable})
+
+    def tearDown(self):
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def test_unquoted_reference_to_a_path_with_a_space_runs(self):
+        code, out = self.fdm.run_step("$PYTHON $PAYLOAD/x.py", self.env)
+        self.assertEqual((code, out), (0, "ran-ok"))
+
+    def test_braced_and_percent_forms_run_too(self):
+        code, out = self.fdm.run_step("${PYTHON} ${PAYLOAD}/x.py", self.env)
+        self.assertEqual((code, out), (0, "ran-ok"))
+        code, out = self.fdm.run_step("%PYTHON% %PAYLOAD%/x.py", self.env)
+        self.assertEqual((code, out), (0, "ran-ok"))
+
+    def test_already_quoted_reference_is_not_double_quoted(self):
+        line = self.fdm.expand_vars('"$PYTHON" "$PAYLOAD/x.py"', self.env)
+        self.assertEqual(line, '"%s" "%s/x.py"' % (sys.executable, self.pdir))
+        code, out = self.fdm.run_step('"$PYTHON" "$PAYLOAD/x.py"', self.env)
+        self.assertEqual((code, out), (0, "ran-ok"))
+
+    def test_plain_values_stay_byte_for_byte(self):
+        env = {"A": "plain-value_1.2/ok", "B": "x"}
+        self.assertEqual(self.fdm.expand_vars("echo $A ${B} %A% '$A'", env),
+                         "echo plain-value_1.2/ok x plain-value_1.2/ok 'plain-value_1.2/ok'")
+        self.assertEqual(self.fdm.expand_vars("echo $NOPE", env), "echo $NOPE")
+
+
 def _md5(path):
     import hashlib
     h = hashlib.md5()

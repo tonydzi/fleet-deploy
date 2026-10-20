@@ -27,6 +27,7 @@ import json
 import os
 import platform
 import re
+import shlex
 import shutil
 import socket
 import subprocess
@@ -506,11 +507,44 @@ def expand_vars(cmd, env):
 
     Not a nicety: `$PARCEL` is not a variable to cmd.exe and `%PARCEL%` is not one to sh, so a
     parcel that has to run on Windows and Linux cannot delegate expansion to the shell. One
-    string, expanded here, runs on both."""
+    string, expanded here, runs on both.
+
+    Quoting: the result goes to a shell, and a real node path can contain a space
+    (a "Program Files" style directory). A value that needs quoting for THIS platform's shell is
+    quoted (POSIX: shlex.quote; Windows cmd: wrapped in double quotes) - unless the manifest
+    already put the reference inside quotes, then it is inserted as-is so it is never quoted
+    twice. A value with no special characters is inserted unchanged."""
+    cmd = cmd or ""
+    win = os.name == "nt"
+
+    def needs_quote(v):
+        if v == "":
+            return False
+        if win:
+            return re.search(r'[\s&|<>^(),;=!"]', v) is not None
+        return shlex.quote(v) != v
+
+    def quote(v):
+        return '"%s"' % v if win else shlex.quote(v)
+
     def repl(m):
         name = m.group(1) or m.group(2) or m.group(3)
-        return env.get(name, m.group(0))
-    return re.sub(r"\$\{(\w+)\}|\$(\w+)|%(\w+)%", repl, cmd or "")
+        if name not in env:
+            return m.group(0)
+        val = str(env[name])
+        if not needs_quote(val):
+            return val
+        # quote state at the reference: scan what precedes it
+        in_dq = in_sq = False
+        for ch in cmd[:m.start()]:
+            if ch == '"' and not in_sq:
+                in_dq = not in_dq
+            elif ch == "'" and not in_dq and not win:
+                in_sq = not in_sq
+        if in_dq or in_sq:
+            return val
+        return quote(val)
+    return re.sub(r"\$\{(\w+)\}|\$(\w+)|%(\w+)%", repl, cmd)
 
 
 def step_env(bus, pid, node):
